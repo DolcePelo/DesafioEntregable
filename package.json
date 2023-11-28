@@ -1,0 +1,22 @@
+{
+  "name": "desafios-entregables",
+  "version": "1.0.0",
+  "description": "",
+  "main": "ProductManager.js",
+  "type": "module",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "start": "node ProductManager.js"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/DolcePelo/DesafioEntregable1.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/DolcePelo/DesafioEntregable1/issues"
+  },
+  "homepage": "https://github.com/DolcePelo/DesafioEntregable1#readme"
+}

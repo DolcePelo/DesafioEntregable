@@ -1,69 +1,155 @@
+import fs from "fs";
+
 class ProductManager {
     products;
     static ultimoCode = 0;
-    static instances = []
 
-    constructor() {
+    constructor(path) {
         this.products = [];
-        ProductManager.instances.push(this)
-    }
-    
-    static getAllProducts() {
-        return ProductManager.instances.reduce((allProducts, instance) => {
-            allProducts.push(...instance.getProducts())
-            return allProducts;
-        }, [])
+        this.path = path;
     }
 
-    getProducts (){
-        return this.products;
-    }
-
-    addProducts(title, description, price, thumbnail, stock, ) {
-        ProductManager.ultimoCode ++;
-        const product = {
-            id: ProductManager.ultimoCode,
-            title,
-            description,
-            price,
-            thumbnail,
-            stock,
+    async getProducts() {
+        if (fs.existsSync(this.path)) {
+            const savedProducts = await fs.promises.readFile(this.path, 'utf-8')
+            return JSON.parse(savedProducts)
+        } else {
+            return []
         }
-        this.products.push(product);
     }
 
-    getProductById(idProduct){
-        if(!idProduct){
-            throw new Error("Id no encontrado");
+    async addProducts(product) {
+        const savedProducts = await this.getProducts()
+        let id;
+        if (!savedProducts.length) {
+            id = 1
+        } else {
+            id = savedProducts[savedProducts.length - 1].id + 1
         }
+        savedProducts.push({ id, ...product })
+        await fs.promises.writeFile(this.path, JSON.stringify(savedProducts))
+        console.log('Product saved')
+    }
 
-        const product = this.products.find((datos) => datos.id === idProduct)
+    async editProduct(idProduct, fieldToEdit, newData) {
+        const savedProducts = await this.getProducts()
+        const productToUpdate = savedProducts.find(u => u.id === idProduct);
+        if (productToUpdate) {
+            productToUpdate[fieldToEdit] = newData
+            await fs.promises.writeFile(this.path, JSON.stringify(savedProducts))
+        } else {
+            return 'Product not found'
+        }
+    }
 
-        return product;
+    async deleteProductById(idProduct) {
+        const savedProducts = await this.getProducts()
+        const savedProductsAux = savedProducts.filter(u => u.id !== idProduct)
+        await fs.promises.writeFile(this.path, JSON.stringify(savedProductsAux))
+    }
+
+    async getProductById(idProduct) {
+        const savedProducts = await this.getProducts()
+        const productAux = savedProducts.find(u => u.id === idProduct)
+        if(productAux){
+            return productAux
+        }else {
+            return 'Product not found'
+        }
+    }
+
+    async deleteFile(){
+        await fs.promises.unlink(this.path)
     }
 }
 
-const productoUno = new ProductManager();
-const productoDos = new ProductManager();
+const product1 = {
+    title: "Televisor",
+    description: "HD pantalla curva",
+    price: 2000,
+    image: "Sin imagen",
+    code: "00001",
+    stock: 10
+}
 
-productoUno.addProducts(
-    'Televisor',
-    'HD pantalla curva',
-    1500,
-    'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.muycomputer.com%2F2016%2F01%2F20%2Ftelevisores-pantalla-curva-ventajas%2F&psig=AOvVaw2Ga2vJSbmwDAyzjynjknQu&ust=1700262772492000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCOCCj8XSyYIDFQAAAAAdAAAAABAH',
-    20,
-);
+const product2 = {
+    title: "Laptop",
+    description: "Portátil de ultima generación",
+    price: 3500,
+    image: "Sin imagen",
+    code: "00002",
+    stock: 7
+}
 
-productoDos.addProducts(
-    'Celular',
-    'Samsung A53',
-    600,
-    'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.elespanol.com%2Felandroidelibre%2Fmoviles-android%2F20220330%2Fmotivos-comprar-samsung-galaxy-a53-ventajas-inconvenientes%2F661184245_0.html&psig=AOvVaw2lT_I2_FHE2J1Hn9AsXzRM&ust=1700264648075000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCPiv7sLZyYIDFQAAAAAdAAAAABAF',
-    23,
-);
+const product3 = {
+    title: "Smartphone",
+    description: "Móvil con cámara y batería de última generación",
+    price: 4000,
+    image: "Sin imagen",
+    code: "00003",
+    stock: 8    
+}
 
-// console.log(productoUno.getProducts())
-// console.log(productoDos.getProducts())
-console.log('Todos los productos:', ProductManager.getAllProducts());
+const product4 = {
+    title: "Tablet para niños",
+    description: "Pantalla táctil para ver videos",
+    price: 2500,
+    image: "Sin imagen",
+    code: "00004",
+    stock: 6
+}
 
-console.log(productoUno.getProductById(1))
+const path = './products.json';
+async function test () {
+    const PM = new ProductManager(path)
+    await PM.addProducts(product1)
+    await PM.addProducts(product2)
+    await PM.addProducts(product3)
+    await PM.addProducts(product4)
+    console.log('-----Obtener Productos-----')
+    const aux1 = await PM.getProducts()
+    console.log(aux1)
+    console.log('----Obtener productos por ID(3)----')
+    const aux2 = await PM.getProductById(3)
+    console.log(aux2)
+    console.log('----Borrar un producto(2)----')
+    await PM.deleteProductById(2)
+    const aux3 = await PM.getProducts()
+    console.log(aux3)
+    console.log('----Editar un producto(4)----')
+    await PM.editProduct(4,'code', 'pppp p')
+    const aux4 = await PM.getProducts()
+    console.log(aux4)
+    console.log('----Borrar archivo----')
+    // await PM.deleteFile()
+}
+test()
+
+// const productoUno = new ProductManager('./products.json');
+// const productoDos = new ProductManager('./products.json');
+// const productoTres = new ProductManager('./products.json');
+
+// productoUno.addProducts(
+//     'Televisor',
+//     'HD pantalla curva',
+//     1500,
+//     'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.muycomputer.com%2F2016%2F01%2F20%2Ftelevisores-pantalla-curva-ventajas%2F&psig=AOvVaw2Ga2vJSbmwDAyzjynjknQu&ust=1700262772492000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCOCCj8XSyYIDFQAAAAAdAAAAABAH',
+//     20,
+// );
+
+// productoDos.addProducts(
+//     'Celular',
+//     'Samsung A53',
+//     600,
+//     'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.elespanol.com%2Felandroidelibre%2Fmoviles-android%2F20220330%2Fmotivos-comprar-samsung-galaxy-a53-ventajas-inconvenientes%2F661184245_0.html&psig=AOvVaw2lT_I2_FHE2J1Hn9AsXzRM&ust=1700264648075000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCPiv7sLZyYIDFQAAAAAdAAAAABAF',
+//     23,
+// );
+
+// productoTres.addProducts(
+//     'Table',
+//     'Samsung E20',
+//     500,
+//     'https://www.google.com/url?sa=i&url=https%3A%2F%2Fwww.elespanol.com%2Felandroidelibre%2Fmoviles-android%2F20220330%2Fmotivos-comprar-samsung-galaxy-a53-ventajas-inconvenientes%2F661184245_0.html&psig=AOvVaw2lT_I2_FHE2J1Hn9AsXzRM&ust=1700264648075000&source=images&cd=vfe&opi=89978449&ved=0CBIQjRxqFwoTCPiv7sLZyYIDFQAAAAAdAAAAABAF',
+//     23,
+// );
+
